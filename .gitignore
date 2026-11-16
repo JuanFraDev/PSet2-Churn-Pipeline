@@ -1,19 +1,30 @@
+# Credenciales y claves privadas: nunca publicarlas
 .env
 .env.*
 !.env.example
+!.env.dbt.example
+secrets/
+*.pem
+*.p8
+*.key
+credentials.json
+
+# Python / dbt / Spark
 __pycache__/
 *.pyc
 .venv/
-secrets/
+.pytest_cache/
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
 logs/
 *.log
-profiles.yml
-credentials.json
-*.pem
-*.p8
+
+# Permitir el perfil dbt del laboratorio: solo usa variables de entorno
+!dbt/profiles.yml
+
+# Archivos locales del editor / SO
+.vscode/
+.idea/
 .DS_Store
-
-.env.snowflake
-secrets/
-
-.env.dbt
+Thumbs.db
