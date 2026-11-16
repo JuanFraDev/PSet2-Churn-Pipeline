@@ -161,7 +161,7 @@ git commit -m "Document validated ELT pipeline and final evidence"
 git push
 ```
 
-El informe técnico está en `docs/PSet2_memo_Donoso.pdf`; el entregable también puede subirse por separado a la plataforma de la asignatura.
+El informe técnico está en `docs/PSet2_memo_Donoso.pdf`.
 
 ## Fuente del dataset
 

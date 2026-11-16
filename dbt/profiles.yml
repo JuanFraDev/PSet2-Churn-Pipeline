@@ -1,0 +1,14 @@
+pset2_churn:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: PSET2_KESTRA_SVC
+      role: PSET2_DBT_ROLE
+      warehouse: PSET2_WH
+      database: PSET2_CHURN
+      schema: BRONZE
+      threads: 2
+      private_key_path: /run/secrets/snowflake_private_key.pem
+      private_key_passphrase: "{{ env_var('DBT_PRIVATE_KEY_PASSPHRASE') }}"
