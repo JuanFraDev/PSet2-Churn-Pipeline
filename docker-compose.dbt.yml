@@ -1,0 +1,12 @@
+services:
+  dbt:
+    build:
+      context: ./dbt
+    env_file:
+      - .env.snowflake
+      - .env.dbt
+    volumes:
+      - ./dbt:/usr/app
+      - ./secrets/snowflake_private_key.pem:/run/secrets/snowflake_private_key.pem:ro
+    working_dir: /usr/app
+    entrypoint: ["/usr/local/bin/dbt-entrypoint"]

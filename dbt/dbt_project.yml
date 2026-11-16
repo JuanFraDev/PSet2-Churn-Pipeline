@@ -1,0 +1,15 @@
+name: pset2_churn
+version: '1.0.0'
+config-version: 2
+profile: pset2_churn
+model-paths: ["models"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+models:
+  pset2_churn:
+    bronze:
+      +materialized: view
+      +schema: BRONZE
+    silver:
+      +materialized: table
+      +schema: SILVER

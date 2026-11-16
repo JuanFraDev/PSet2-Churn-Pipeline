@@ -1,0 +1,11 @@
+version: 2
+sources:
+  - name: raw
+    description: "Carga original desde Kestra; todos los campos fueron preservados como texto."
+    database: PSET2_CHURN
+    schema: RAW
+    tables:
+      - name: TELCO_CUSTOMER_CHURN
+        columns:
+          - name: CUSTOMER_ID
+            data_tests: [not_null, unique]

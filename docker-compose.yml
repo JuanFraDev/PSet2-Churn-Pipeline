@@ -1,0 +1,75 @@
+# PSet #2 - Entorno local de desarrollo. Snowflake se usa como servicio cloud.
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: kestra
+      POSTGRES_USER: kestra
+      POSTGRES_PASSWORD: ${KESTRA_DB_PASSWORD:?Configure KESTRA_DB_PASSWORD en .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kestra -d kestra"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  kestra:
+    image: kestra/kestra:v1.3.47
+    restart: unless-stopped
+    user: "root"
+    command: server standalone --worker-thread=64
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - kestra_data:/app/storage
+      - kestra_tmp:/tmp/kestra-wd
+      # Se utiliza solo en desarrollo local, para futuras tareas que ejecuten contenedores:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./kestra/flows:/app/flows
+    environment:
+      KESTRA_CONFIGURATION: |
+        datasources:
+          postgres:
+            url: jdbc:postgresql://postgres:5432/kestra
+            driver-class-name: org.postgresql.Driver
+            username: kestra
+            password: "${KESTRA_DB_PASSWORD:?Configure KESTRA_DB_PASSWORD en .env}"
+        kestra:
+          server:
+            basic-auth:
+              username: "${KESTRA_UI_USER:?Configure KESTRA_UI_USER en .env}"
+              password: "${KESTRA_UI_PASSWORD:?Configure KESTRA_UI_PASSWORD en .env}"
+          repository:
+            type: postgres
+          queue:
+            type: postgres
+          storage:
+            type: local
+            local:
+              base-path: /app/storage
+          tasks:
+            tmp-dir:
+              path: /tmp/kestra-wd/tmp
+          url: http://localhost:8080/
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env.snowflake
+
+  spark:
+    image: apache/spark:4.0.0-python3
+    restart: unless-stopped
+    entrypoint: ["/bin/bash", "-lc"]
+    command: ["sleep infinity"]
+    working_dir: /opt/spark/work-dir
+    volumes:
+      - ./spark:/opt/spark/work-dir/project
+    # Spark se ejecutara en modo local usando spark-submit, no como cluster permanente.
+
+volumes:
+  postgres_data:
+  kestra_data:
+  kestra_tmp:

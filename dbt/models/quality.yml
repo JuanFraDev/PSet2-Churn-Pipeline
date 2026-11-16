@@ -1,0 +1,29 @@
+version: 2
+models:
+  - name: brz_telco_customers
+    description: "Bronze: conversiones seguras, sin eliminar filas."
+    columns:
+      - name: customer_id
+        data_tests: [not_null, unique]
+      - name: churn
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Yes', 'No']
+  - name: slv_telco_customers
+    description: "Silver: 1 fila por cliente, preparada para el modelo dimensional."
+    columns:
+      - name: customer_id
+        data_tests: [not_null, unique]
+      - name: churn_flag
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
+      - name: tenure_months
+        data_tests: [not_null]
+      - name: monthly_charges
+        data_tests: [not_null]

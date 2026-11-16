@@ -1,0 +1,52 @@
+version: 2
+models:
+  - name: dim_customer
+    description: "Una fila por cliente del corte disponible; contiene atributos demográficos."
+    columns:
+      - name: customer_key
+        data_tests: [not_null, unique]
+      - name: customer_id
+        data_tests: [not_null, unique]
+  - name: dim_contract
+    description: "Combinaciones únicas de contrato, facturación y forma de pago."
+    columns:
+      - name: contract_key
+        data_tests: [not_null, unique]
+  - name: dim_services
+    description: "Combinaciones únicas de servicios contratados."
+    columns:
+      - name: services_key
+        data_tests: [not_null, unique]
+  - name: fact_customer_churn
+    description: "Tabla de hechos: una fila por cliente del snapshot del dataset Telco."
+    columns:
+      - name: customer_id
+        data_tests: [not_null, unique]
+      - name: customer_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customer')
+                field: customer_key
+      - name: contract_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_contract')
+                field: contract_key
+      - name: services_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_services')
+                field: services_key
+      - name: churn_flag
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
