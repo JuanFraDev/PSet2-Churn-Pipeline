@@ -11,7 +11,6 @@ from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 
 SOURCE = "net.snowflake.spark.snowflake"
-KEY_FILE = "/run/secrets/snowflake_private_key.pem"
 
 
 def required_env(key):
@@ -22,25 +21,38 @@ def required_env(key):
 
 
 def unencrypted_private_key_body():
-    # Solo existe en memoria. NO escribir la clave descifrada en disco o logs.
+    """Descifra la clave desde los secretos existentes de Kestra, sin leer archivos montados.
+
+    Las variables contienen Base64 (no cifrado). No imprimir jamás estos valores.
+    """
+    key_b64 = required_env("SECRET_SNOWFLAKE_PRIVATE_KEY")
     passphrase_b64 = required_env("SECRET_SNOWFLAKE_PRIVATE_KEY_PASSWORD")
     try:
+        encrypted_key_pem = base64.b64decode(key_b64, validate=True)
         passphrase = base64.b64decode(passphrase_b64, validate=True).decode("utf-8")
+        if not encrypted_key_pem.startswith(b"-----BEGIN "):
+            raise ValueError("PEM inválido")
     except Exception as exc:
-        raise RuntimeError("No se pudo decodificar la frase de la clave RSA") from exc
+        raise RuntimeError("Los secretos RSA no tienen un formato Base64/PEM válido") from exc
+
     subprocess_env = os.environ.copy()
     subprocess_env["SPARK_SF_KEY_PASSPHRASE"] = passphrase
     try:
-        completed = subprocess.run(
-            ["openssl", "pkey", "-in", KEY_FILE, "-passin", "env:SPARK_SF_KEY_PASSPHRASE", "-outform", "PEM"],
-            check=True, capture_output=True, env=subprocess_env,
+        # OpenSSL lee el PEM cifrado desde stdin, evitando permisos de bind mounts Docker.
+        result = subprocess.run(
+            ["openssl", "pkey", "-passin", "env:SPARK_SF_KEY_PASSPHRASE", "-outform", "PEM"],
+            input=encrypted_key_pem,
+            check=True,
+            capture_output=True,
+            env=subprocess_env,
         )
     except subprocess.CalledProcessError as exc:
-        raise RuntimeError("No se pudo descifrar la clave RSA; revisa la frase de contraseña local") from exc
-    pem = completed.stdout.decode("utf-8")
+        raise RuntimeError("No se pudo descifrar la clave RSA recibida mediante secretos") from exc
+
+    pem = result.stdout.decode("utf-8")
     body = "".join(line.strip() for line in pem.splitlines() if line and not line.startswith("-----"))
     if not body:
-        raise RuntimeError("La clave privada descifrada está vacía")
+        raise RuntimeError("La clave RSA descifrada está vacía")
     return body
 
 
